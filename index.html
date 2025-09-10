@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YouTube Video Feed</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        body { background-color: transparent; font-family: 'Poppins', sans-serif; margin: 0; padding: 0; }
+        #youtube-feed { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 25px; }
+        .video-item { position: relative; border-radius: 12px; overflow: hidden; text-decoration: none; cursor: pointer; transition: transform 0.3s ease, box-shadow 0.3s ease; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        .video-item:hover { transform: scale(1.05); box-shadow: 0 8px 20px rgba(0,0,0,0.15); }
+        .video-item img { width: 100%; height: auto; display: block; }
+        .video-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0) 50%); color: #fff; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; opacity: 0; transition: opacity 0.3s ease; }
+        .video-item:hover .video-overlay { opacity: 1; }
+        .video-overlay h3 { padding: 15px; margin: 0; font-size: 16px; font-weight: 600; text-align: center; width: 100%; }
+        .play-icon { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0.8); width: 60px; height: 60px; background-color: rgba(255, 255, 255, 0.9); border-radius: 50%; display: flex; align-items: center; justify-content: center; opacity: 0; transition: all 0.3s ease; }
+        .video-item:hover .play-icon { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+        .play-icon svg { width: 30px; height: 30px; fill: #000; }
+        #modal-container { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0, 0, 0, 0.9); align-items: center; justify-content: center; }
+        #modal-content { position: relative; width: 90%; max-width: 800px; }
+        #video-player-container { position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; }
+        #video-player-container iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+        #close-button { position: absolute; top: -45px; right: -5px; color: #fff; font-size: 45px; font-weight: bold; cursor: pointer; transition: transform 0.2s; }
+        #close-button:hover { transform: scale(1.1); }
+    </style>
+</head>
+<body>
+    <div id="youtube-feed"></div>
+    <div id="modal-container">
+        <div id="modal-content">
+            <span id="close-button" onclick="closePlayer()">&times;</span>
+            <div id="video-player-container"></div>
+        </div>
+    </div>
+    <script>
+        // --- PASTE YOUR DETAILS HERE ---
+        const API_KEY = 'AIzaSyD8OlxiR_rV5L4FY7c_eDw--1VARc2ZGL4';
+        const PLAYLIST_ID = 'UUp2dHCbC4qn-c2elWITJDLQ';
+        // ---------------------------------
+        const feedContainer = document.getElementById('youtube-feed');
+        const maxResults = 50;
+        const apiUrl = `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&playlistId=${PLAYLIST_ID}&maxResults=${maxResults}&key=${API_KEY}`;
+        fetch(apiUrl).then(response => response.json()).then(data => {
+            if (data.items && data.items.length > 0) {
+                feedContainer.innerHTML = "";
+                data.items.forEach(item => {
+                    const snippet = item.snippet;
+                    if (!snippet.resourceId || !snippet.thumbnails) { return; }
+                    const videoId = snippet.resourceId.videoId;
+                    const title = snippet.title;
+                    const thumbnailUrl = snippet.thumbnails.maxres ? snippet.thumbnails.maxres.url : snippet.thumbnails.high.url;
+                    const videoElement = `<div class="video-item" onclick="openPlayer('${videoId}')"><img src="${thumbnailUrl}" alt="${title}"><div class="video-overlay"><div class="play-icon"><svg viewBox="0 0 24 24"><path d="M8,5.14V19.14L19,12.14L8,5.14Z" /></svg></div><h3>${title}</h3></div></div>`;
+                    feedContainer.innerHTML += videoElement;
+                });
+            } else {
+                feedContainer.innerHTML = "<p>This playlist is empty or could not be loaded.</p>";
+            }
+        }).catch(error => {
+            console.error('Error fetching data:', error);
+            feedContainer.innerHTML = "<p>An error occurred while loading videos.</p>";
+        });
+        const modalContainer = document.getElementById('modal-container');
+        const playerContainer = document.getElementById('video-player-container');
+        function openPlayer(videoId) {
+            playerContainer.innerHTML = `<iframe src="https://www.youtube.com/embed/${videoId}?autoplay=1" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
+            modalContainer.style.display = 'flex';
+        }
+        function closePlayer() {
+            modalContainer.style.display = 'none';
+            playerContainer.innerHTML = '';
+        }
+        window.onclick = function(event) {
+            if (event.target == modalContainer) {
+                closePlayer();
+            }
+        }
+    </script>
+</body>
+</html>
