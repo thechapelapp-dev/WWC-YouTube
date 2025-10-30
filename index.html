@@ -3,35 +3,130 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>YouTube Playlist</title>
+    <title>YouTube Video Feed</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
     <style>
-        /* This makes the iframe fill the page */
-        body, html { 
-            margin: 0; 
-            padding: 0; 
-            width: 100%; 
-            height: 100%; 
-            overflow: hidden; 
+        body { background-color: transparent; font-family: 'Poppins', sans-serif; margin: 0; padding: 20px; }
+        .series-title {
+            font-size: 2rem;
+            font-weight: 600;
+            color: #333;
+            margin-top: 30px;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #eee;
         }
-        
-        /* This makes the YouTube player fill the iframe */
-        .youtube-embed {
-            width: 100%;
-            height: 100%;
-            border: none;
-        }
+        .video-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 25px; }
+        .video-item { position: relative; border-radius: 12px; overflow: hidden; text-decoration: none; cursor: pointer; transition: transform 0.3s ease, box-shadow 0.3s ease; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        .video-item:hover { transform: scale(1.05); box-shadow: 0 8px 20px rgba(0,0,0,0.15); }
+        .video-item img { width: 100%; height: auto; display: block; }
+        .video-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0) 50%); color: #fff; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; opacity: 0; transition: opacity 0.3s ease; }
+        .video-item:hover .video-overlay { opacity: 1; }
+        .video-overlay h3 { padding: 15px; margin: 0; font-size: 16px; font-weight: 600; text-align: center; width: 100%; }
+        .play-icon { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0.8); width: 60px; height: 60px; background-color: rgba(255, 255, 255, 0.9); border-radius: 50%; display: flex; align-items: center; justify-content: center; opacity: 0; transition: all 0.3s ease; }
+        .video-item:hover .play-icon { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+        .play-icon svg { width: 30px; height: 30px; fill: #000; }
+        #modal-container { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0, 0, 0, 0.9); align-items: center; justify-content: center; }
+        #modal-content { position: relative; width: 90%; max-width: 800px; }
+        #video-player-container { position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; }
+        #video-player-container iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+        #close-button { position: absolute; top: -45px; right: -5px; color: #fff; font-size: 45px; font-weight: bold; cursor: pointer; transition: transform 0.2s; }
+        #close-button:hover { transform: scale(1.1); }
+        #loading-message { font-size: 1.2rem; text-align: center; color: #888; }
     </style>
 </head>
 <body>
 
-    <iframe 
-        class="youtube-embed"
-        src="https://www.youtube.com/embed/videoseries?si=pqhWmA-IiLYJONh5&amp;list=PLupoaEoo4ApVC5hXGiEnsQGBEUnsXmFhF" 
-        title="YouTube video player" 
-        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
-        referrerpolicy="strict-origin-when-cross-origin" 
-        allowfullscreen>
-    </iframe>
+    <main id="video-content">
+        <p id="loading-message">Loading videos...</p>
+    </main>
 
+    <div id="modal-container">
+        <div id="modal-content">
+            <span id="close-button" onclick="closePlayer()">&times;</span>
+            <div id="video-player-container"></div>
+        </div>
+    </div>
+
+    <script>
+        // This script runs on the website. It's simple and has no quotas.
+        
+        // As soon as the page loads, fetch the local videos.json file
+        document.addEventListener('DOMContentLoaded', () => {
+            // We add a cache-buster to make sure we always get the freshest file
+            fetch('videos.json?t=' + new Date().getTime())
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    buildPage(data);
+                })
+                .catch(error => {
+                    console.error('Error fetching video data:', error);
+                    document.getElementById('loading-message').innerText = 'An error occurred while loading videos.';
+                });
+        });
+
+        function buildPage(seriesData) {
+            const mainContainer = document.getElementById('video-content');
+            mainContainer.innerHTML = ''; // Clear "Loading..." message
+
+            // Get the series names and sort them
+            const seriesNames = Object.keys(seriesData);
+
+            // Loop through each series and create a section
+            seriesNames.forEach(seriesName => {
+                const videos = seriesData[seriesName];
+
+                // 1. Create the series title
+                const titleElement = document.createElement('h2');
+                titleElement.className = 'series-title';
+                titleElement.innerText = seriesName;
+                mainContainer.appendChild(titleElement);
+
+                // 2. Create the grid for this series
+                const gridElement = document.createElement('div');
+                gridElement.className = 'video-grid';
+
+                // 3. Loop through the videos in this series and create the cards
+                videos.forEach(video => {
+                    const videoCard = `
+                        <div class="video-item" onclick="openPlayer('${video.id}')">
+                            <img src="${video.thumbnail}" alt="${video.title}">
+                            <div class="video-overlay">
+                                <div class="play-icon"><svg viewBox="0 0 24 24"><path d="M8,5.14V19.14L19,12.14L8,5.14Z" /></svg></div>
+                                <h3>${video.title}</h3>
+                            </div>
+                        </div>
+                    `;
+                    gridElement.innerHTML += videoCard;
+                });
+                
+                mainContainer.appendChild(gridElement);
+            });
+        }
+
+        // --- Modal Pop-up Player (no changes) ---
+        const modalContainer = document.getElementById('modal-container');
+        const playerContainer = document.getElementById('video-player-container');
+        function openPlayer(videoId) {
+            playerContainer.innerHTML = `<iframe src="https://www.youtube.com/embed/${videoId}?autoplay=1" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
+            modalContainer.style.display = 'flex';
+        }
+        function closePlayer() {
+            modalContainer.style.display = 'none';
+            playerContainer.innerHTML = '';
+        }
+        window.onclick = function(event) {
+            if (event.target == modalContainer) {
+                closePlayer();
+            }
+        }
+    </script>
 </body>
 </html>
