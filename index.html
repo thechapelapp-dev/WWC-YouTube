@@ -24,7 +24,26 @@
         .video-item img { width: 100%; height: auto; display: block; }
         .video-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0) 50%); color: #fff; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; opacity: 0; transition: opacity 0.3s ease; }
         .video-item:hover .video-overlay { opacity: 1; }
-        .video-overlay h3 { padding: 15px; margin: 0; font-size: 16px; font-weight: 600; text-align: center; width: 100%; }
+        
+        /* --- MODIFIED CSS --- */
+        .video-overlay h3 { 
+            padding: 15px 15px 5px 15px; /* Less bottom padding to make room for date */
+            margin: 0; 
+            font-size: 16px; 
+            font-weight: 600; 
+            text-align: center; 
+            width: 100%; 
+        }
+        /* --- NEW CSS --- */
+        .video-date {
+            font-size: 14px;
+            font-weight: 400;
+            color: #ddd;
+            padding-bottom: 15px;
+            text-align: center;
+            margin: 0;
+        }
+
         .play-icon { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0.8); width: 60px; height: 60px; background-color: rgba(255, 255, 255, 0.9); border-radius: 50%; display: flex; align-items: center; justify-content: center; opacity: 0; transition: all 0.3s ease; }
         .video-item:hover .play-icon { opacity: 1; transform: translate(-50%, -50%) scale(1); }
         .play-icon svg { width: 30px; height: 30px; fill: #000; }
@@ -51,11 +70,7 @@
     </div>
 
     <script>
-        // This script runs on the website. It's simple and has no quotas.
-        
-        // As soon as the page loads, fetch the local videos.json file
         document.addEventListener('DOMContentLoaded', () => {
-            // We add a cache-buster to make sure we always get the freshest file
             fetch('videos.json?t=' + new Date().getTime())
                 .then(response => {
                     if (!response.ok) {
@@ -74,36 +89,34 @@
 
         function buildPage(seriesData) {
             const mainContainer = document.getElementById('video-content');
-            mainContainer.innerHTML = ''; // Clear "Loading..." message
+            mainContainer.innerHTML = ''; 
 
-            // Get the series names and sort them
             const seriesNames = Object.keys(seriesData);
 
-            // Loop through each series and create a section
             seriesNames.forEach(seriesName => {
                 const videos = seriesData[seriesName];
 
-                // 1. Create the series title
                 const titleElement = document.createElement('h2');
                 titleElement.className = 'series-title';
                 titleElement.innerText = seriesName;
                 mainContainer.appendChild(titleElement);
 
-                // 2. Create the grid for this series
                 const gridElement = document.createElement('div');
                 gridElement.className = 'video-grid';
 
-                // 3. Loop through the videos in this series and create the cards
                 videos.forEach(video => {
+                    // --- MODIFIED HTML ---
                     const videoCard = `
                         <div class="video-item" onclick="openPlayer('${video.id}')">
                             <img src="${video.thumbnail}" alt="${video.title}">
                             <div class="video-overlay">
                                 <div class="play-icon"><svg viewBox="0 0 24 24"><path d="M8,5.14V19.14L19,12.14L8,5.14Z" /></svg></div>
                                 <h3>${video.title}</h3>
+                                <p class="video-date">${video.date}</p> 
                             </div>
                         </div>
                     `;
+                    // --- END MODIFIED HTML ---
                     gridElement.innerHTML += videoCard;
                 });
                 
