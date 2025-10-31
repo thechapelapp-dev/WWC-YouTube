@@ -15,7 +15,7 @@
             padding: 20px; 
         }
         
-        /* --- Series Title (With Date) --- */
+        /* Series Title (With Date) */
         .series-title {
             font-size: 2rem;
             font-weight: 600;
@@ -32,10 +32,16 @@
             margin-left: 10px;
         }
 
+        /* --- THIS IS THE CHANGED STYLE --- */
         .video-grid { 
             display: grid; 
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); 
+            grid-template-columns: 1fr; /* This forces a single column */
             gap: 25px; 
+            
+            /* These new lines center the column and prevent it
+               from being too wide on giant screens */
+            max-width: 700px; 
+            margin: 0 auto;
         }
 
         .video-item { 
@@ -57,7 +63,7 @@
             padding: 15px;
         }
         .video-info h3 {
-            font-size: 1rem;
+            font-size: 1.1rem; /* Slightly larger text */
             font-weight: 600;
             color: #333;
             margin: 0 0 5px 0;
@@ -70,7 +76,7 @@
             min-height: 40px; 
         }
         .video-info p {
-            font-size: 0.9rem;
+            font-size: 1rem; /* Slightly larger text */
             font-weight: 400;
             color: #666;
             margin: 0;
@@ -104,7 +110,8 @@
             opacity: 1; 
         }
         .play-icon { 
-            width: 60px; height: 60px; 
+            width: 70px; /* Larger play icon */
+            height: 70px; 
             background-color: rgba(255, 255, 255, 0.9); 
             border-radius: 50%; 
             display: flex; 
@@ -116,7 +123,7 @@
         .video-item:hover .play-icon {
             transform: scale(1);
         }
-        .play-icon svg { width: 30px; height: 30px; fill: #000; }
+        .play-icon svg { width: 35px; height: 35px; fill: #000; }
 
 
         /* Modal Pop-up (No Change) */
@@ -170,15 +177,11 @@
                 const videos = seriesData[seriesName];
                 if (!videos || videos.length === 0) return; 
 
-                // --- THIS IS THE FIX ---
-                // Get the date from the newest video (which is the first one)
                 const newestVideoDate = videos[0].date;
                 const titleElement = document.createElement('h2');
                 titleElement.className = 'series-title';
-                // Add the date back to the series title
                 titleElement.innerHTML = `${seriesName} <span class="series-date">${newestVideoDate}</span>`;
                 mainContainer.appendChild(titleElement);
-                // --- END FIX ---
 
                 const gridElement = document.createElement('div');
                 gridElement.className = 'video-grid';
